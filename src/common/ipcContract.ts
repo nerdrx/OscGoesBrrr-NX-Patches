@@ -42,7 +42,7 @@ export interface SettingsStateVrchat {
         oscqueryStatus: OscqueryStatus;
         oscqueryWaitingForBulk: boolean;
         logsFound: boolean;
-        detectedVrcConfigDir?: string;
+        detectedVrcConfigDirs: string[];
     };
     detectedSpsPlugIds: string[];
     detectedSpsSocketIds: string[];

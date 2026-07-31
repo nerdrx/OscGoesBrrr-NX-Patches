@@ -173,7 +173,7 @@ function VrchatSettingsSection({
         `VRC OSC: ${vrchat.diagnostics.vrcOscPort ?? "n/a"}`,
         `VRC OSCQ status: ${vrchat.diagnostics.oscqueryStatus}`,
         `Logs: ${vrchat.diagnostics.logsFound ? "found" : "missing"}`,
-        `Detected: ${vrchat.diagnostics.detectedVrcConfigDir ?? "not found"}`,
+        `Detected: ${vrchat.diagnostics.detectedVrcConfigDirs.join(", ") || "not found"}`,
     ].join(" | ");
 
     return (

@@ -32,24 +32,24 @@ export default class VrchatLogFinder {
         this.logger = logger.get(this.constructor.name);
     }
 
-    private locatedVrcConfigDir: undefined | Promise<string | undefined>;
+    private locatedVrcConfigDir: undefined | Promise<string[]>;
     private async getVrcConfigDir() {
         // if a config value is set, use that instead
         const configVrcConfigDir = (await this.configService.get()).vrcConfigDir;
         if(configVrcConfigDir) {
-            return configVrcConfigDir;
+            return [configVrcConfigDir];
         }
 
         if (this.locatedVrcConfigDir === undefined) {
             this.locatedVrcConfigDir = this.locateVrcConfigDir();
-            const dir = await this.locatedVrcConfigDir;
-            if (dir) this.logger.log(`Located VRC Config directory at ${dir}`)
+            const dirs = await this.locatedVrcConfigDir;
+            if (dirs.length > 0) this.logger.log(`Located VRC Config directories at ${dirs.join(', ')}`)
             else this.locatedVrcConfigDir = undefined;
-            return dir;
+            return dirs;
         } else {
-            const dir = await this.locatedVrcConfigDir;
-            if (!dir) this.locatedVrcConfigDir = undefined;
-            return dir;
+            const dirs = await this.locatedVrcConfigDir;
+            if (dirs.length === 0) this.locatedVrcConfigDir = undefined;
+            return dirs;
         }
     }
 
@@ -69,19 +69,19 @@ export default class VrchatLogFinder {
         }
     }
 
-    private async trySteamRoot(steamRoot: string, prefixPath: string): Promise<string | undefined> {
-        let candidateFromLibraryFolders: string | undefined;
+    private async trySteamRoot(steamRoot: string, prefixPath: string): Promise<string[]> {
+        const candidates = new Set<string>();
         const libraryFoldersPath = Path.resolve(steamRoot, 'steamapps/libraryfolders.vdf');
         try {
             this.logger.log(`Trying ${libraryFoldersPath}...`);
             const libraryFolders = await fs.readFile(libraryFoldersPath, {encoding: "utf-8"});
             const libraryFoldersParsed = typia.assert<SteamLibraryFolders>(VdfParser.parse(libraryFolders, { types: false, arrayify: true }));
             const libraries = Object.values(libraryFoldersParsed.libraryfolders);
-            const targetLibrary = libraries.find((l) => Object.keys(l.apps).includes("438100"));
-            if (targetLibrary) {
-                candidateFromLibraryFolders = Path.resolve(targetLibrary.path, prefixPath);
-                const found = await this.tryLocateVrcPath(candidateFromLibraryFolders);
-                if (found) return found;
+            const targetLibraries = libraries.filter((library) => Object.keys(library.apps).includes("438100"));
+            if (targetLibraries.length > 0) {
+                for (const library of targetLibraries) {
+                    candidates.add(Path.resolve(library.path, prefixPath));
+                }
             } else {
                 this.logger.log(`VRChat not found in ${libraryFoldersPath}`);
             }
@@ -89,15 +89,17 @@ export default class VrchatLogFinder {
             this.logger.log(`Couldn't access ${libraryFoldersPath}`);
         }
 
-        const fallbackPath = Path.resolve(steamRoot, prefixPath);
-        return await this.tryLocateVrcPath(fallbackPath);
+        candidates.add(Path.resolve(steamRoot, prefixPath));
+        const found = await Promise.all([...candidates].map(candidate => this.tryLocateVrcPath(candidate)));
+        return found.filter((candidate): candidate is string => candidate !== undefined);
     }
 
-    private async locateVrcConfigDir(): Promise<string | undefined> {
+    private async locateVrcConfigDir(): Promise<string[]> {
+        const dirs: string[] = [];
         if(process.platform == 'win32') {
             const path = Path.resolve(app.getPath('appData'), '../LocalLow/VRChat/VRChat');
             const found = await this.tryLocateVrcPath(path);
-            if (found) return found;
+            if (found) dirs.push(found);
         }
 
         if (process.platform == 'linux') {
@@ -113,38 +115,40 @@ export default class VrchatLogFinder {
             ];
 
             for (const steamRoot of possibleSteamRoots) {
-                const found = await this.trySteamRoot(steamRoot, prefixPath);
-                if (found) return found;
+                dirs.push(...await this.trySteamRoot(steamRoot, prefixPath));
             }
         }
 
-        this.logger.log("Failed to find VRChat at any attemped paths");
-        return undefined;
+        if (dirs.length === 0) this.logger.log("Failed to find VRChat at any attemped paths");
+        return [...new Set(dirs)];
     }
 
     public async getLatestLog() {
-        const vrcConfigDir = await this.getVrcConfigDir();
-        if (!vrcConfigDir) return undefined;
-
-        let files;
-        try {
-            files = (await fs.readdir(vrcConfigDir))
-                .filter(name => name.startsWith("output_log"));
-        } catch(e) {
-            this.logger.log(`Failed to read VRC config dir ${vrcConfigDir}: ${e}`);
-            return undefined;
+        const vrcConfigDirs = await this.getVrcConfigDir();
+        const logs: {path: string; modified: number}[] = [];
+        for (const vrcConfigDir of vrcConfigDirs) {
+            try {
+                const files = (await fs.readdir(vrcConfigDir)).filter(name => name.startsWith("output_log"));
+                for (const file of files) {
+                    const path = Path.resolve(vrcConfigDir, file);
+                    const stat = await fs.stat(path);
+                    if (stat.isFile()) logs.push({path, modified: stat.mtimeMs});
+                }
+            } catch(e) {
+                this.logger.log(`Failed to read VRC config dir ${vrcConfigDir}: ${e}`);
+            }
         }
 
-        files.sort();
-        files.reverse();
-        const newestConfig = files[0];
-        if (!newestConfig) {
-            this.logger.log(`Config dir did not contain an output_log`);
+        const newestLog = logs.reduce<{path: string; modified: number} | undefined>(
+            (newest, log) => !newest || log.modified > newest.modified ? log : newest,
+            undefined,
+        );
+        if (!newestLog) {
+            this.logger.log(`Config directories did not contain an output_log`);
             return undefined;
         }
-        const configPath = Path.resolve(vrcConfigDir, newestConfig);
-        this.logger.log(`Found output_log at ${configPath}`);
-        return configPath;
+        this.logger.log(`Found output_log at ${newestLog.path}`);
+        return newestLog.path;
     }
 
     public async forEachLine(each: (line:string)=>void) {

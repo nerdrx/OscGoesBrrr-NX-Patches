@@ -87,7 +87,7 @@ handleIpc('settings-state:request', async () => {
         myAddressesService,
     );
     const vrchatConnected = oscConnection.isGameOpenAndActive();
-    const detectedVrcConfigDir = await vrchatLogFinder.getDetectedVrcConfigDir();
+    const detectedVrcConfigDirs = await vrchatLogFinder.getDetectedVrcConfigDir();
     const connectedOutputDevices = Array.from(bridge.getOutputs());
     const gameDevices = Array.from(bridge.getGameDevices());
     const hasSpsZones = gameDevices.some(device => device.type === 'Pen' || device.type === 'Orf' || device.type === 'Touch');
@@ -257,7 +257,7 @@ handleIpc('settings-state:request', async () => {
                     oscqueryStatus,
                     oscqueryWaitingForBulk: oscStatusSnapshot.oscqueryWaitingForBulk,
                     logsFound: vrchatOscqueryService.getLogsFound(),
-                    detectedVrcConfigDir: maskUserInPath(detectedVrcConfigDir),
+                    detectedVrcConfigDirs: detectedVrcConfigDirs.map(path => maskUserInPath(path) ?? path),
                 },
                 detectedSpsPlugIds,
                 detectedSpsSocketIds,
