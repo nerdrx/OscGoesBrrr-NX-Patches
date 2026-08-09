@@ -133,6 +133,7 @@ function OutputLinkEditor({linkAtom, activeLevel, labelMap, removeLink}: Props) 
                 {kind: 'scale', label: 'Scale'},
                 {kind: 'deadZone', label: 'Dead Zone'},
                 {kind: 'motionBased', label: 'Motion-Based'},
+                {kind: 'smooth', label: 'Smooth'},
             ]
             : [];
     const availableMutatorOptions = mutatorOptions.filter(option => !getMutators().some(mutator => mutator.kind === option.kind));
@@ -145,6 +146,8 @@ function OutputLinkEditor({linkAtom, activeLevel, labelMap, removeLink}: Props) 
                 return {kind: 'deadZone', level: 0};
             case 'motionBased':
                 return {kind: 'motionBased'};
+            case 'smooth':
+                return {kind: 'smooth', riseSeconds: 1, fallSeconds: 1};
         }
     };
 
@@ -347,7 +350,8 @@ function OutputLinkEditor({linkAtom, activeLevel, labelMap, removeLink}: Props) 
                                         <Typography variant="body2">
                                             {mutator.kind === 'scale' ? `Scale (${formatPercent(mutator.scale)}%)`
                                                 : mutator.kind === 'deadZone' ? `Dead Zone (${formatPercent(mutator.level)}%)`
-                                                    : 'Motion-Based'}
+                                                    : mutator.kind === 'smooth' ? `Smooth (rise ${mutator.riseSeconds}s, fall ${mutator.fallSeconds}s)`
+                                                        : 'Motion-Based'}
                                         </Typography>
                                         <IconButton size="small" color="error" onClick={removeThisMutator}>
                                             <CloseIcon fontSize="small" />
@@ -392,6 +396,49 @@ function OutputLinkEditor({linkAtom, activeLevel, labelMap, removeLink}: Props) 
                                                     commitThisMutator((draft) => {
                                                         if (draft.kind !== 'deadZone') return;
                                                         draft.level = value / 100;
+                                                    });
+                                                }}
+                                            />
+                                        </Box>
+                                    )}
+                                    {mutator.kind === 'smooth' && (
+                                        <Box>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Gradually ramps intensity changes over time. Helps with toys that switch vibration programs based on intensity and need time to settle.
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary" sx={{mt: 1}}>
+                                                Rise Time
+                                            </Typography>
+                                            <Slider
+                                                value={mutator.riseSeconds}
+                                                min={0}
+                                                max={10}
+                                                step={0.1}
+                                                valueLabelDisplay="auto"
+                                                valueLabelFormat={(value) => `${value}s`}
+                                                onChange={(_e, value) => {
+                                                    if (typeof value !== 'number') return;
+                                                    commitThisMutator((draft) => {
+                                                        if (draft.kind !== 'smooth') return;
+                                                        draft.riseSeconds = value;
+                                                    });
+                                                }}
+                                            />
+                                            <Typography variant="body2" color="text.secondary">
+                                                Fall Time
+                                            </Typography>
+                                            <Slider
+                                                value={mutator.fallSeconds}
+                                                min={0}
+                                                max={10}
+                                                step={0.1}
+                                                valueLabelDisplay="auto"
+                                                valueLabelFormat={(value) => `${value}s`}
+                                                onChange={(_e, value) => {
+                                                    if (typeof value !== 'number') return;
+                                                    commitThisMutator((draft) => {
+                                                        if (draft.kind !== 'smooth') return;
+                                                        draft.fallSeconds = value;
                                                     });
                                                 }}
                                             />

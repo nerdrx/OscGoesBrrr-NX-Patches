@@ -121,10 +121,18 @@ export interface OutputLinkDeadZoneMutator {
 export interface OutputLinkMotionBasedMutator {
     kind: 'motionBased';
 }
+
+export interface OutputLinkSmoothMutator {
+    kind: 'smooth';
+    riseSeconds: number; // seconds for the value to slew from 0 to 1
+    fallSeconds: number; // seconds for the value to slew from 1 to 0
+}
+
 export type OutputLinkMutator =
     | OutputLinkScaleMutator
     | OutputLinkDeadZoneMutator
-    | OutputLinkMotionBasedMutator;
+    | OutputLinkMotionBasedMutator
+    | OutputLinkSmoothMutator;
 export type OutputLinkMutatorKind = OutputLinkMutator['kind'];
 
 export interface Output {

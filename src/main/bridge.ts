@@ -116,6 +116,7 @@ export class BridgeOutput {
     private linearTarget = 0;
     private linearVelocity = 0;
     private lastLinearSuck = 0;
+    private smoothedValues: (number | undefined)[] = [];
 
     constructor(
         public readonly bioFeature: DeviceFeature,
@@ -156,10 +157,36 @@ export class BridgeOutput {
         return out;
     }
 
-    getRelevantSources(gameDevices: GameDevice[], audioLevel: number | undefined, config: Output): RelevantSource[] {
+    private applySmoothing(value: number, mutators: OutputLinkMutator[], linkIndex: number, timeDelta: number) {
+        const smooth = mutators.find(
+            (mutator): mutator is Extract<OutputLinkMutator, {kind: 'smooth'}> => mutator.kind === 'smooth',
+        );
+        if (!smooth) {
+            this.smoothedValues[linkIndex] = undefined;
+            return value;
+        }
+        const prev = this.smoothedValues[linkIndex];
+        let out;
+        if (prev === undefined) {
+            out = value;
+        } else {
+            const rising = value > prev;
+            const seconds = rising ? smooth.riseSeconds : smooth.fallSeconds;
+            if (seconds <= 0) {
+                out = value;
+            } else {
+                const maxStep = (timeDelta / 1000) / seconds;
+                out = clamp(value, prev - maxStep, prev + maxStep);
+            }
+        }
+        this.smoothedValues[linkIndex] = out;
+        return out;
+    }
+
+    getRelevantSources(gameDevices: GameDevice[], audioLevel: number | undefined, config: Output, timeDelta: number): RelevantSource[] {
         const links = config.links;
         const entries = this.osc.entries();
-        return links.map((link) => {
+        return links.map((link, linkIndex) => {
             if (link.kind === 'constant') {
                 if (this.bioFeature.type === 'linear') return {value: 0, motionBased: false};
                 return {
@@ -172,7 +199,7 @@ export class BridgeOutput {
                 const rawAudio = audioLevel ?? 0;
                 const transformed = this.applyMutators(rawAudio, link.mutators);
                 return {
-                    value: transformed,
+                    value: this.applySmoothing(transformed, link.mutators, linkIndex, timeDelta),
                     motionBased: false,
                 };
             }
@@ -188,7 +215,7 @@ export class BridgeOutput {
                             : 0;
                 const transformed = this.applyMutators(raw, link.mutators);
                 return {
-                    value: transformed,
+                    value: this.applySmoothing(transformed, link.mutators, linkIndex, timeDelta),
                     motionBased: this.hasMotionBased(link.mutators),
                 };
             }
@@ -207,7 +234,10 @@ export class BridgeOutput {
                     }
                 }
                 }
-            return best;
+            return {
+                ...best,
+                value: this.applySmoothing(best.value, link.mutators, linkIndex, timeDelta),
+            };
         });
     }
 
@@ -217,7 +247,7 @@ export class BridgeOutput {
         const config = this.getConfig();
         const timeDelta = clamp(timeDeltaReal, 0, 250); // safety limited
 
-        const sources = this.getRelevantSources(gameDevices, audioLevel, config);
+        const sources = this.getRelevantSources(gameDevices, audioLevel, config, timeDelta);
         let level = 0;
         let motionBasedBackward = false;
         for (let linkIndex = 0; linkIndex < sources.length; linkIndex++) {
