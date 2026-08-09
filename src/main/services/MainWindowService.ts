@@ -42,7 +42,7 @@ export default class MainWindowService {
                 preload: path.join(app.getAppPath(), 'out/preload/index.cjs'),
             },
             icon: nativeImage.createFromDataURL(iconDataUrl),
-            title: 'OscGoesBrrr v' + app.getVersion()
+            title: 'OscGoesBrrr - NX-Patches v' + app.getVersion()
         });
         created.setMenuBarVisibility(false);
         const rendererUrl = process.env['ELECTRON_RENDERER_URL'];

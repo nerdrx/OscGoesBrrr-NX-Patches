@@ -1,8 +1,8 @@
 {
-  "name": "OscGoesBrrr",
+  "name": "oscgoesbrrr-nx-patches",
   "version": "0.0.0-dev",
   "type": "module",
-  "description": "Haptics for VRChat",
+  "description": "Haptics for VRChat — NX-Patches fork",
   "author": {
     "name": "OscToys",
     "email": "noreply@osc.toys"
@@ -16,7 +16,7 @@
     "rebuild": "pnpm run build && pnpm run start",
     "typecheck": "pnpm exec tsc -p src/main/tsconfig.json --noEmit && pnpm exec tsc -p src/preload/tsconfig.json --noEmit && pnpm exec tsc -p src/frontend/tsconfig.json --noEmit"
   },
-  "repository": "https://github.com/OscToys/OscGoesBrrr",
+  "repository": "https://github.com/nerdrx/OscGoesBrrr-NX-Patches",
   "license": "CC BY-NC-SA 4.0",
   "devEngines": {
     "packageManager": {
@@ -92,8 +92,8 @@
     "native-reg": "^1.1.1"
   },
   "build": {
-    "appId": "toys.osc.oscgoesbrrr",
-    "productName": "OscGoesBrrr",
+    "appId": "toys.osc.oscgoesbrrr.nx-patches",
+    "productName": "OscGoesBrrr - NX-Patches",
     "npmRebuild": false,
     "publish": null,
     "win": {
@@ -102,12 +102,12 @@
         "portable"
       ],
       "icon": "src/icons/ogb-logo.ico",
-      "artifactName": "OscGoesBrrr-${version}.exe"
+      "artifactName": "OscGoesBrrr-NX-Patches-${version}.exe"
     },
     "linux": {
       "target": "AppImage",
       "icon": "src/icons/ogb-logo.png",
-      "artifactName": "OscGoesBrrr.AppImage",
+      "artifactName": "OscGoesBrrr-NX-Patches.AppImage",
       "maintainer": "OscToys <noreply@osc.toys>"
     },
     "nsis": {

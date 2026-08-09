@@ -8,7 +8,7 @@ export function getPortableExecutablePath(): string | undefined {
 export function configurePortableDataPaths(app: App): void {
     const executablePath = getPortableExecutablePath();
     if (!executablePath) return;
-    const root = path.join(path.dirname(executablePath), "ogb-portable-data");
+    const root = path.join(path.dirname(executablePath), "ogb-nx-portable-data");
 
     app.setPath("userData", root);
     app.setPath("sessionData", path.join(root, "sessionData"));

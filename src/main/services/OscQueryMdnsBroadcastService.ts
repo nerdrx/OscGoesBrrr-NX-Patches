@@ -44,7 +44,7 @@ export default class OscQueryMdnsBroadcastService {
         }
 
         const port = await this.oscQueryPortService.get();
-        const packet = buildOscQueryMdnsPacket("OGB", port);
+        const packet = buildOscQueryMdnsPacket("OGB-NX", port);
         const addresses = this.myAddresses.getExternalIpv4Addresses();
         if (addresses.length === 0) {
             this.logger.log("OSCQuery MDNS broadcaster could not start because no external IPv4 interfaces are available");

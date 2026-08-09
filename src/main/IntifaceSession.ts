@@ -54,7 +54,7 @@ export default class IntifaceSession extends TypedEventEmitter<SessionEvents> {
         await this.waitForOpen(attemptSignal);
         await this.request({
             type: 'RequestServerInfo',
-            ClientName: 'OscGoesBrrr',
+            ClientName: 'OscGoesBrrr-NX-Patches',
             ProtocolVersionMajor: 4,
             ProtocolVersionMinor: 0,
         }, attemptSignal);
