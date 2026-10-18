@@ -57,6 +57,8 @@ jobs:
       - name: Build
         run: |
           pnpm install --frozen-lockfile --config.platform=win32
+          pnpm run typecheck
+          pnpm exec node scripts/test-bridge.cjs
           pnpm run build
           pnpm exec electron-builder \
             --win nsis portable \
@@ -87,6 +89,8 @@ jobs:
       - name: Build
         run: |
           pnpm install --frozen-lockfile
+          pnpm run typecheck
+          pnpm exec node scripts/test-bridge.cjs
           pnpm run build
           pnpm exec electron-builder \
             --linux AppImage rpm \
