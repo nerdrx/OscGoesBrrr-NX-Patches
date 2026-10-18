@@ -52,7 +52,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/semver": "^7.8.0",
     "@types/ws": "^8.18.2",
-    "@vitejs/plugin-react": "^6.1.2",
+    "@vitejs/plugin-react": "^5.2.0",
     "bonjour-service": "^1.4.4",
     "bootstrap": "^5.3.8",
     "chokidar": "^5.0.0",
@@ -85,7 +85,7 @@
     "typescript": "^7.0.2",
     "typia": "^15.1.0",
     "vdf-parser": "^1.2.1",
-    "vite": "^8.3.4",
+    "vite": "^7.3.6",
     "ws": "^8.22.0"
   },
   "optionalDependencies": {

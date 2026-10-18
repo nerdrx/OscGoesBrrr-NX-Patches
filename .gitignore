@@ -7,3 +7,4 @@ node_modules
 /out/
 /native/steamvr_overlay/build/
 /ref/
+/.ttsc/
